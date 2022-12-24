@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GetGlobalData</title>
+</head>
+
+<body>
+  <div id="info"></div>
+  <script>
+    const info = document.getElementById('info');
+    info.innerHTML = '<h1>LOADING...</h1>';
+    const q = `node[shop=farm](-90,-180,90,180);out;`;
+    const address =
+      'https://maps.mail.ru/osm/tools/overpass/api/interpreter?data=' +
+      encodeURIComponent(q);
+    console.log('address :>> ', address);
+    fetch(address)
+      .then((t) => t.text())
+      .then((j) => {
+        const mapData = {};
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(j, 'text/xml');
+        xmlDoc.querySelectorAll('node').forEach((n) => {
+          const p = {
+            id: parseInt(n.id),
+            lat: n.getAttribute('lat') || 'ERROR',
+            lon: n.getAttribute('lon') || 'ERROR',
+            tags: {},
+          };
+          n.querySelectorAll('tag').forEach((tag) => {
+            const key = tag.getAttribute('k') || 'ERROR';
+            const value = tag.getAttribute('v') || 'ERROR';
+            p.tags[key] = value;
+          });
+          mapData[`id${p.id}`] = p;
+        });
+        const blobConfig = new Blob(
+          [JSON.stringify(mapData)],
+          { type: 'text/json;charset=utf-8' }
+        );
+        const blobUrl = URL.createObjectURL(blobConfig);
+        const anchor = document.createElement('a');
+        anchor.href = blobUrl;
+        anchor.target = "_blank";
+        anchor.download = "global_map_data.json";
+        anchor.click();
+        URL.revokeObjectURL(blobUrl);
+        info.innerHTML = '<h1>DONE!</h1>';
+      })
+      .catch((e) => console.log('e :>> ', e));
+  </script>
+</body>
+
+</html>

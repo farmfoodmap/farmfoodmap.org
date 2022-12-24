@@ -1,13 +1,14 @@
 import './style.css';
 import '../node_modules/leaflet/dist/leaflet.css';
-// import { setupCounter } from './counter';
 import * as L from 'leaflet';
 import '../node_modules/leaflet.markercluster/dist/leaflet.markercluster.js';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import 'leaflet/dist/leaflet.css';
 import { LatLngBounds } from 'leaflet';
 import { debounce } from './debounce';
+import { MapData, MapDataObject, globalMapData } from './global_map_data';
 
+const mapData: MapDataObject = {};
 // const L = window['L'];
 const markers = L.markerClusterGroup();
 const FFMM = L.icon({
@@ -19,15 +20,6 @@ const FFMM = L.icon({
 });
 // import { setupMap } from './map';
 let bounds: LatLngBounds;
-let currentMarkers: L.Layer[] = [];
-type MapData = {
-  id: number;
-  lat: string;
-  lon: string;
-  tags: {
-    [key: string]: string;
-  };
-};
 
 /*
 
@@ -45,8 +37,6 @@ const map = L.map('map').setView([0, 0], 3);
 try {
   const c = JSON.parse(localStorage.center);
   const z = parseInt(localStorage.zoom);
-  console.log('c :>> ', c);
-  console.log('z :>> ', z);
   map.setView(c, z);
 } catch (_) {}
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -54,6 +44,8 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution:
     '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
 }).addTo(map);
+map.addLayer(markers);
+
 // setupCounter(document.querySelector<HTMLButtonElement>('#counter')!);
 
 document.querySelector('.leaflet-control-attribution')!.innerHTML =
@@ -73,8 +65,6 @@ const setBounds = debounce(() => {
   bounds = map.getBounds();
   const z = map.getZoom();
   const c = map.getCenter();
-  console.log('z :>> ', z);
-  console.log('c :>> ', c);
   localStorage.zoom = z;
   localStorage.center = JSON.stringify(c);
   localStorage.bounds = JSON.stringify(bounds);
@@ -84,7 +74,7 @@ const setBounds = debounce(() => {
 
 const fetchData = debounce(() => {
   if (map.getZoom() < 8) {
-    updateInfo('Zoom in to load data');
+    updateInfo();
     return;
   }
   updateInfo('Fetching latest data...');
@@ -92,21 +82,14 @@ const fetchData = debounce(() => {
   const address =
     'https://maps.mail.ru/osm/tools/overpass/api/interpreter?data=' +
     encodeURIComponent(q);
-  // const address = encodeURI(
-  //   `https://overpass.kumi.systems/api/interpreter?data=[out:json][timeout:25000];node["shop"="farm"](nwr(${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()}););out body;>;out skel qt;`
-  // );
-  console.log('address :>> ', address);
   fetch(address)
     // .then((r) => r.json())
     .then((t) => t.text())
     .then((j) => {
       updateInfo('Processing data...');
-      console.log('j :>> ', j);
       const parser = new DOMParser();
       const xmlDoc = parser.parseFromString(j, 'text/xml');
       updateInfo('Updating markers');
-      markers.removeLayers(currentMarkers);
-      currentMarkers = [];
       xmlDoc.querySelectorAll('node').forEach((n) => {
         const p: MapData = {
           id: parseInt(n.id),
@@ -119,20 +102,31 @@ const fetchData = debounce(() => {
           const value: string = tag.getAttribute('v') || 'ERROR';
           p.tags[key] = value;
         });
-        const address = [];
-        if (p.tags['addr:housename']) address.push(p.tags['addr:housename']);
-        if (p.tags['addr:street']) address.push(p.tags['addr:street']);
-        if (p.tags['addr:city']) address.push(p.tags['addr:city']);
-        if (p.tags['addr:postcode']) address.push(p.tags['addr:postcode']);
-        if (p.tags['website'])
-          address.push(
-            `<a href="${p.tags['website']}" target="_blank">${p.tags['website']}</a>`
-          );
-        if (p.tags['facebook'])
-          address.push(
-            `<a href="${p.tags['website']}" target="_blank">Facebook</a>`
-          );
-        let info = `<h4>${p.tags.name || 'Unknown'}</h4>
+        const pid: string = `id${p.id}`;
+        if (!mapData[pid]) {
+          mapData[pid] = p;
+          markerToMap(p);
+        }
+      });
+
+      updateInfo();
+    })
+    .catch((e) => console.error('e :>> ', e));
+}, 1000);
+
+const formatPopup = (p: MapData): string => {
+  const address = [];
+  if (p?.tags['addr:housename']) address.push(p.tags['addr:housename']);
+  if (p?.tags['addr:street']) address.push(p.tags['addr:street']);
+  if (p?.tags['addr:city']) address.push(p.tags['addr:city']);
+  if (p?.tags['addr:postcode']) address.push(p.tags['addr:postcode']);
+  if (p?.tags['website'])
+    address.push(
+      `<a href="${p.tags['website']}" target="_blank">${p.tags['website']}</a>`
+    );
+  if (p?.tags['facebook'])
+    address.push(`<a href="${p.tags['website']}" target="_blank">Facebook</a>`);
+  let info = `<h4>${p?.tags.name || 'Unknown'}</h4>
         ${
           address.length ? `<small>${address.join('<br>')}</small><br><br>` : ''
         }
@@ -149,24 +143,43 @@ const fetchData = debounce(() => {
             return `${k.replace('_', ' ')}: ${p.tags[k]}<br>`;
           })
           .join('')}<br><small>OSM Node ID: ${p.id}</small>`;
-        const thisMarker = L.marker([parseFloat(p.lat), parseFloat(p.lon)], {
-          icon: FFMM,
-        }).bindPopup(info);
-        markers.addLayer(thisMarker);
-        currentMarkers.push(thisMarker);
-      });
-      map.addLayer(markers);
-      updateInfo();
-    })
-    .catch((e) => console.log('e :>> ', e));
-}, 1000);
+  return info;
+};
 
-// ₷ 𝇟
+const markerToMap = (p: MapData) => {
+  const info = formatPopup(p);
+  const thisMarker = L.marker([parseFloat(p.lat), parseFloat(p.lon)], {
+    icon: FFMM,
+  }).bindPopup(info);
+  markers.addLayer(thisMarker);
+};
+
+const bulkMarkersToMap = (arr: MapData[]) => {
+  const markerArr = arr.map((p) => {
+    const info = formatPopup(p);
+    const thisMarker = L.marker([parseFloat(p.lat), parseFloat(p.lon)], {
+      icon: FFMM,
+    }).bindPopup(info);
+    return thisMarker;
+  });
+  markers.addLayers(markerArr);
+  updateInfo();
+};
 
 setBounds();
 map.on('moveend', setBounds);
 map.on('zoomend', setBounds);
 
-// let bounds = map.getBounds();
-
-// console.log('bounds.getCenter() :>> ', bounds.getCenter());
+window.setTimeout(() => {
+  Object.values(globalMapData).forEach((p: MapData) => {
+    const pid: string = `id${p.id}`;
+    if (Object.prototype.hasOwnProperty.call(globalMapData, pid)) {
+      // const element: MapData = mapDataImport[pid];
+      if (!mapData[pid]) {
+        mapData[pid] = p;
+        // markerToMap(p);
+      }
+    }
+  });
+  bulkMarkersToMap(Object.values(mapData));
+}, 1000);
