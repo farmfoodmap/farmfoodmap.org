@@ -34,10 +34,27 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = /*html*/ `
 <div id="map"></div>
 `;
 const map = L.map('map').setView([0, 0], 3);
-try {
+const moveMapToSavedPosition = () => {
   const c = JSON.parse(localStorage.center);
   const z = parseInt(localStorage.zoom);
   map.setView(c, z);
+};
+try {
+  const s = location.search;
+  if (s && s.includes('lat=') && s.includes('lng=') && s.includes('z=')) {
+    // there is probably map coords in the params
+    const p = new URLSearchParams(s);
+    const lat = parseFloat(p.get('lat') || 'l');
+    const lng = parseFloat(p.get('lng') || 'l');
+    const z = parseInt(p.get('z') || 'z');
+    if (isNaN(lat) || isNaN(lng) || isNaN(z)) {
+      moveMapToSavedPosition();
+    } else {
+      map.setView({ lat, lng }, z);
+    }
+  } else {
+    moveMapToSavedPosition();
+  }
 } catch (_) {}
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19,
@@ -68,6 +85,7 @@ const setBounds = debounce(() => {
   localStorage.zoom = z;
   localStorage.center = JSON.stringify(c);
   localStorage.bounds = JSON.stringify(bounds);
+  history.replaceState({}, '', `?lat=${c.lat}&lng=${c.lng}&z=${z}`);
   updateInfo('Map moved, processing...');
   fetchData();
 }, 50);
