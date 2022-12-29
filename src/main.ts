@@ -442,9 +442,9 @@ document
     deferredPrompt = null;
   });
 
-// iOS install instructions
+// iOS/Firefox install instructions
 if (
-  /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+  /iPad|iPhone|iPod|Firefox/.test(navigator.userAgent) ||
   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
 ) {
   if (!localStorage.iOSLoaded) {
