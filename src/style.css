@@ -52,6 +52,7 @@ svg.leaflet-attribution-flag {
   color: #177212;
   background-color: #ffffffaa;
   border: 1px solid #177212;
+  cursor: pointer;
 }
 
 #settings {
@@ -65,6 +66,7 @@ svg.leaflet-attribution-flag {
   color: #177212;
   background-color: #ffffffaa;
   border: 1px solid #177212;
+  cursor: pointer;
 }
 
 #settings > svg {
