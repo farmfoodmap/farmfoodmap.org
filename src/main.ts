@@ -450,5 +450,7 @@ if (
   if (!localStorage.iOSLoaded) {
     localStorage.iOSLoaded = 1;
     showInstallPromotion();
+  } else {
+    installPromptButton!.style.display = 'block';
   }
 }
