@@ -53,11 +53,11 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = /*html*/ `
    <img src="/android-chrome-384x384.png"/>
    <span>FARM FOOD MAP</span>
 </div>
-<div id="settings"><svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" viewBox="0 0 483 483">
+<div id="settings" onclick="()=>{}"><svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" viewBox="0 0 483 483">
   <path d="M117 203c13-2 27 3 36 13l24 24 23-23-33-33a13 13 0 0 1 19-18l32 33 23-23-24-24c-9-10-14-23-12-36A102 102 0 0 0 88 1c-4 1-6 7-3 10l31 31c15 15 15 39 0 53l-19 19a37 37 0 0 1-53 0L13 84c-4-4-10-2-10 3a102 102 0 0 0 114 116zm192 41-23 23 135 134a13 13 0 0 1-18 19L268 285l-23 23 139 139a45 45 0 0 0 64-64L309 244z"/>
   <path d="M361 154h60l60-120-30-30-120 60v60L169 286l-30-29L21 375a63 63 0 1 0 89 89l118-118-30-30 163-162z"/>
 </svg></div>
-<div id="infoBar" class="hidden"><a href="https://twitter.com/farmfoodmap" target="_blank" noreferrer="true" tooltip="Visit our Twitter"><svg xmlns="http://www.w3.org/2000/svg" class="svg-social" id="svg-icon-twitter" viewBox="0 0 512 512">
+<div id="infoBar" class="hidden" onclick="()=>{}"><a href="https://twitter.com/farmfoodmap" target="_blank" noreferrer="true" tooltip="Visit our Twitter"><svg xmlns="http://www.w3.org/2000/svg" class="svg-social" id="svg-icon-twitter" viewBox="0 0 512 512">
 <path d="M419.6 168.6c-11.7 5.2-24.2 8.7-37.4 10.2 13.4-8.1 23.8-20.8 28.6-36 -12.6 7.5-26.5 12.9-41.3 15.8 -11.9-12.6-28.8-20.6-47.5-20.6 -42 0-72.9 39.2-63.4 79.9 -54.1-2.7-102.1-28.6-134.2-68 -17 29.2-8.8 67.5 20.1 86.9 -10.7-0.3-20.7-3.3-29.5-8.1 -0.7 30.2 20.9 58.4 52.2 64.6 -9.2 2.5-19.2 3.1-29.4 1.1 8.3 25.9 32.3 44.7 60.8 45.2 -27.4 21.4-61.8 31-96.4 27 28.8 18.5 63 29.2 99.8 29.2 120.8 0 189.1-102.1 185-193.6C399.9 193.1 410.9 181.7 419.6 168.6z"
   />
 </svg></a>&nbsp;&nbsp;&nbsp;<a href="https://github.com/farmfoodmap" target="_blank" noreferrer="true" tooltip="Visit our GitHub"><svg xmlns="http://www.w3.org/2000/svg" class="svg-social" id="svg-icon-github" viewBox="0 0 512 512">
