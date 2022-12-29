@@ -441,3 +441,14 @@ document
     // We've used the prompt, and can't use it again, throw it away
     deferredPrompt = null;
   });
+
+// iOS install instructions
+if (
+  /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+) {
+  if (!localStorage.iOSLoaded) {
+    localStorage.iOSLoaded = 1;
+    showInstallPromotion();
+  }
+}
