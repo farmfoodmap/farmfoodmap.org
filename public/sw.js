@@ -1,5 +1,5 @@
 // Establish a cache name
-const cacheName = 'FarmFoodMapOrg_v1';
+const cacheName = 'FarmFoodMapOrg_v0.0.2';
 
 self.addEventListener('fetch', (event) => {
   if (event.request.destination === 'image') {
