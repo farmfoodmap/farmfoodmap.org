@@ -111,23 +111,23 @@ svg.leaflet-attribution-flag {
   position: absolute;
   top: 5px;
   z-index: 999;
-  display: flex;
-  align-items: center;
-  padding: 12px;
+  /* display: flex; */
+  /* align-items: center; */
+  /* padding: 12px; */
   border-radius: 10px;
   left: 50%;
   -webkit-transform: translateX(-50%);
   transform: translateX(-50%);
-  justify-content: center;
-  font-weight: bolder;
-  color: var(--ffm-green);
-  background-color: #ffffffaa;
-  font-size: 25px;
-  border: 1px solid var(--ffm-green);
+  /* justify-content: center; */
+  /* font-weight: bolder; */
+  /* color: var(--ffm-green); */
+  /* background-color: #ffffffaa; */
+  /* font-size: 25px; */
+  /* border: 1px solid var(--ffm-green); */
 }
 
 #heading > img {
-  height: 25px;
+  height: 60px;
 }
 
 .modal {

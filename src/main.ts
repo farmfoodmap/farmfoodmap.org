@@ -60,8 +60,7 @@ let bounds: LatLngBounds;
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = /*html*/ `
 <section id="mapPage" class="pages">
   <div id="heading">
-    <img src="/android-chrome-192x192.png" />
-    <span>FARM FOOD MAP</span>
+    <img src="/FFM_logo.png" />
   </div>
   <div id="settings" class="custom-button" onclick="()=>{}"></div>
   <div id="infoBar" class="hidden" onclick="()=>{}"><a href="https://twitter.com/farmfoodmap" target="_blank" rel="noopener noreferrer" tooltip="Visit our Twitter"><svg xmlns="http://www.w3.org/2000/svg" class="svg-social"
