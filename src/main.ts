@@ -133,9 +133,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = /*html*/ `
   <div class="backToMap">
     Back to the map
   </div>
-  <div id="editMapLink">
-    <a href="" target="_blank" rel="noopener noreferrer" id="editorLink">I understand, take me to the editor!</a>
-  </div>
+  <a href="" target="_blank" rel="noopener noreferrer" id="editorLink">I understand, take me to the editor!</a>
   <article>
     <h1>Editing the map</h1>
     <p>
