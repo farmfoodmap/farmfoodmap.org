@@ -171,18 +171,18 @@ svg.leaflet-attribution-flag {
   width: 100%;
 }
 
-.backToMap {
-  position: sticky;
-  top: 0;
-  left: 0;
-  display: block;
-  width: 8em;
+.backToMap,
+#editMapLink {
   border: 1px solid var(--ffm-green);
   color: var(--ffm-green);
   background-color: var(--color-text);
   cursor: pointer;
-  padding: 1em;
   border-radius: 1em;
+  height: 40px;
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .backToMap:hover {
@@ -199,16 +199,8 @@ svg.leaflet-attribution-flag {
   text-align: initial;
   overflow-x: hidden;
   overflow-y: scroll;
-  height: 80%;
+  height: calc(100% - 150px);
   max-width: 1000px;
-}
-
-#editMapLink {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  -webkit-transform: translateX(-50%);
-  transform: translateX(-50%);
 }
 
 .custom-button {

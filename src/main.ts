@@ -130,9 +130,12 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = /*html*/ `
   </article>
 </section>
 <section id="mapEditPage" class="pages hidden">
-  <span class="backToMap">
+  <div class="backToMap">
     Back to the map
-  </span>
+  </div>
+  <div id="editMapLink">
+    <a href="" target="_blank" rel="noopener noreferrer" id="editorLink">I understand, take me to the editor!</a>
+  </div>
   <article>
     <h1>Editing the map</h1>
     <p>
@@ -262,9 +265,6 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = /*html*/ `
       There are two more tags that can be used to help show how recent the information is (although it is not currently displayed on the map): <code>survey:date</code> should be used when you have physically visited the location and <code>check_date</code> should be used when the location has been verified with local knowledge or extrapolation. Both of these tags require the date in ISO format: <code>yyyy-mm-dd</code>.
     </p>
     </article>
-    <p>
-      <a href="" target="_blank" rel="noopener noreferrer" id="editorLink">I understand, take me to the editor!</a>
-    </p>
 </section>
 `;
 
