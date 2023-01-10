@@ -15,13 +15,13 @@ try {
   const rM = await fetch(address + encodeURIComponent(qM));
   console.log('Response received. Now Processing...');
   const jM = await rM.json();
-  const joined = { ...j, ...jM };
+  const joined = [...jM.elements, ...j.elements];
   const mapData = {};
-  if (j.elements === undefined) {
-    console.log('j :>> ', joined);
+  if (!joined.length) {
+    console.log('joined :>> ', joined);
     throw new Error('Unknown response from server');
   }
-  joined.elements.forEach((n) => {
+  joined.forEach((n) => {
     if (n.id && n.lat && n.lon && n.tags) {
       const p = {
         id: parseInt(n.id),
