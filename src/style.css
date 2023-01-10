@@ -203,6 +203,14 @@ svg.leaflet-attribution-flag {
   max-width: 1000px;
 }
 
+#editMapLink {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  -webkit-transform: translateX(-50%);
+  transform: translateX(-50%);
+}
+
 .custom-button {
   background-color: #fff;
   width: 34px;
