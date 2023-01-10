@@ -17,6 +17,12 @@ interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
 }
 declare global {
+  interface Window {
+    editMap: Function;
+    sharePopup: Function;
+  }
+}
+declare global {
   interface WindowEventMap {
     beforeinstallprompt: BeforeInstallPromptEvent;
   }
@@ -466,69 +472,135 @@ const fetchData = debounce(() => {
 }, 1000);
 
 const formatPopup = (p: MapData): string => {
-  const address = [];
+  // Name, address, freetext description, produce, website, contact, Bitcoin
+  const shopName = p?.tags.name || 'Unknown Name',
+    sharing: string[] = [shopName],
+    contact = [],
+    address = [];
+  const shareData = {
+    title: shopName,
+    text: '',
+    url: `https://farmfoodmap.org/?lat=${p.lat}&lng=${p.lon}&z=19`,
+  };
+  if (p?.tags['addr:floor']) address.push(p.tags['addr:floor'] + ' Floor');
   if (p?.tags['addr:housename']) address.push(p.tags['addr:housename']);
-  if (p?.tags['addr:housenumber']) address.push(p.tags['addr:housenumber']);
-  if (p?.tags['addr:floor']) address.push(p.tags['addr:floor']);
-  if (p?.tags['addr:street']) address.push(p.tags['addr:street']);
+  if (p?.tags['addr:housenumber'] && p?.tags['addr:street'])
+    address.push(p.tags['addr:housenumber'] + ' ' + p?.tags['addr:street']);
+  else if (p?.tags['addr:street']) address.push(p.tags['addr:street']);
   if (p?.tags['addr:suburb']) address.push(p.tags['addr:suburb']);
   if (p?.tags['addr:city']) address.push(p.tags['addr:city']);
   if (p?.tags['addr:state']) address.push(p.tags['addr:state']);
   if (p?.tags['addr:province']) address.push(p.tags['addr:province']);
   if (p?.tags['addr:postcode']) address.push(p.tags['addr:postcode']);
   if (p?.tags['addr:country']) address.push(p.tags['addr:country']);
-  if (p?.tags['website'])
-    address.push(
-      `<a href="${p.tags['website']}" target="_blank" rel="noopener noreferrer">${p.tags['website']}</a>`
+  shareData.text += address.join(', ');
+  // contact
+  if (p?.tags['website']) {
+    contact.push(
+      `<a href="${p.tags['website']}" target="_blank" rel="noopener noreferrer">Website</a>`
     );
-  if (p?.tags['email'])
-    address.push(
+    sharing.push(p?.tags['website']);
+  } else if (p?.tags['contact:website']) {
+    contact.push(
+      `<a href="${p.tags['contact:website']}" target="_blank" rel="noopener noreferrer">Website</a>`
+    );
+    sharing.push(p?.tags['contact:website']);
+  } else if (p?.tags['url']) {
+    contact.push(
+      `<a href="${p.tags['url']}" target="_blank" rel="noopener noreferrer">Website</a>`
+    );
+    sharing.push(p?.tags['url']);
+  }
+  if (p?.tags['email']) {
+    contact.push(
       `<a href="mailto:${p.tags['email']}" target="_blank" rel="noopener noreferrer">${p.tags['email']}</a>`
     );
-  if (p?.tags['phone'])
-    address.push(`<a href="tel:${p.tags['phone']}">${p.tags['phone']}</a>`);
+  } else if (p?.tags['contact:email']) {
+    contact.push(
+      `<a href="mailto:${p.tags['contact:email']}" target="_blank" rel="noopener noreferrer">${p.tags['contact:email']}</a>`
+    );
+  }
+  if (p?.tags['phone']) {
+    contact.push(`<a href="tel:${p.tags['phone']}">${p.tags['phone']}</a>`);
+  } else if (p?.tags['contact:phone']) {
+    contact.push(
+      `<a href="tel:${p.tags['contact:phone']}">${p.tags['contact:phone']}</a>`
+    );
+  } else if (p?.tags['contact:mobile']) {
+    contact.push(
+      `<a href="tel:${p.tags['contact:mobile']}">${p.tags['contact:mobile']}</a>`
+    );
+  }
+  if (p?.tags['contact:facebook']) {
+    contact.push(
+      `<a href="${p.tags['url']}" target="_blank" rel="noopener noreferrer">Facebook</a>`
+    );
+  } else if (p?.tags['facebook']) {
+    contact.push(
+      `<a href="${p.tags['url']}" target="_blank" rel="noopener noreferrer">Facebook</a>`
+    );
+  }
+
   const capitalize = (word: string) =>
     word.charAt(0).toUpperCase() + word.slice(1);
   const joiner = new Intl.ListFormat('en', {
     style: 'long',
     type: 'conjunction',
   });
-  p.tags.products = '';
-  let info = `<h4>${p?.tags.name || 'Unknown Name'}</h4>
+  p.tags.products = capitalize(
+    joiner.format(
+      (p.tags.produce || '')
+        .split(';')
+        .concat((p.tags.product || '').split(';'))
+        .filter((item) => !!item)
+        .map((item) => item.trim())
+    )
+  );
+  if (p.tags.description) shareData.text += `\n${p.tags.description}`;
+  if (p.tags.products) shareData.text += `\nSelling: ${p.tags.products}.`;
+  if (shareData.text.startsWith('\n')) {
+    shareData.text.replace('\n', '');
+  }
+  let info = `<h4>${shopName}</h4>
         ${
           address.length ? `<small>${address.join('<br>')}</small><br><br>` : ''
         }
         ${Object.keys(p.tags)
-          .filter((k) => {
-            if (k.startsWith('contact:')) return true;
-            if (k.startsWith('payment:')) return true;
-            if (k === 'organic') return true;
-            if (k === 'description') return true;
-            if (k === 'produce' || k === 'product') {
-              p.tags.products = p.tags.products
-                ? `${p.tags.products};${p.tags[k]}`
-                : p.tags[k];
-              return false;
-            }
-            if (k === 'currency:XBT') return true;
-            return false;
-          })
+          .filter(
+            (k) =>
+              k.startsWith('payment:') ||
+              k === 'organic' ||
+              k === 'description' ||
+              k === 'currency:XBT'
+          )
           .concat(['products'])
           .map((k) => {
+            p.tags[k] = p.tags[k]
+              .replace(/^\byes\b$/, '✔')
+              .replace(/^\bno\b$/, '✘');
+            const key =
+              capitalize(
+                k
+                  .replace('_', ' ')
+                  .replace(/^payment/, 'pay')
+                  .replace(':', ' with ')
+                  .replace('currency:XBT', 'Bitcoin accepted')
+              ) || '';
+            const value =
+              joiner.format(
+                capitalize(p.tags[k])
+                  .split(';')
+                  .map((w) => w.trim())
+              ) || '';
             return p.tags[k]
-              ? `<strong>${capitalize(
-                  k
-                    .replace('_', ' ')
-                    .replace(':', ' with ')
-                    .replace('currency:XBT', 'Bitcoin accepted')
-                )}</strong>: ${joiner.format(
-                  capitalize(p.tags[k])
-                    .split(';')
-                    .map((w) => w.trim())
-                )}<br>`
+              ? `<strong>${capitalize(key)}</strong>: ${value}<br>`
               : '';
           })
-          .join('')}<br><button onclick="editMap('${p.id}')">Edit</button>`;
+          .join('')}<br><button id="popupButton" onclick="editMap('${
+    p.id
+  }')">Edit</button><button id="popupButton" onclick="sharePopup(this,'${encodeURI(
+    JSON.stringify(shareData)
+  )}')">Share</button>`;
   return info;
 };
 
@@ -550,6 +622,26 @@ const bulkMarkersToMap = (arr: MapData[]) => {
   });
   markers.addLayers(markerArr);
   updateInfo();
+};
+
+window.sharePopup = async (button: HTMLElement, text: string) => {
+  let shareData: { title?: string; text?: string; url?: string } = {};
+  try {
+    shareData = JSON.parse(decodeURI(text));
+    await navigator.share(shareData);
+  } catch (_e) {
+    const newClip = Object.values(shareData).join('\n');
+    navigator.clipboard.writeText(newClip).then(
+      () => {
+        /* clipboard successfully set */
+        button.innerText = 'Copy';
+      },
+      () => {
+        /* clipboard write failed */
+        console.error('Unable to copy or share');
+      }
+    );
+  }
 };
 
 setBounds();
@@ -644,11 +736,7 @@ if (
     installPromptButton!.style.display = 'block';
   }
 }
-declare global {
-  interface Window {
-    editMap: Function;
-  }
-}
+
 window.editMap = (nodeId = '') => {
   document.querySelectorAll('.pages').forEach((p) => {
     p.classList.add('hidden');

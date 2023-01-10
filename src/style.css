@@ -209,6 +209,11 @@ svg.leaflet-attribution-flag {
   border: 2px solid #a3a3a3;
 }
 
+#popupButton {
+  background-color: var(--ffm-green);
+  width: 50%;
+}
+
 @media (prefers-color-scheme: light) {
   :root {
     --color-text: #213547;
