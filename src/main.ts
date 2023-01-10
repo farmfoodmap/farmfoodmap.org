@@ -6,7 +6,8 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import 'leaflet/dist/leaflet.css';
 import { LatLngBounds } from 'leaflet';
 import { debounce } from './debounce';
-import { MapData, MapDataObject, globalMapData } from './global_map_data';
+import { MapData, MapDataObject } from './MapTypes';
+import globalMapData from './globalData.json';
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
   readonly userChoice: Promise<{
@@ -424,30 +425,23 @@ const fetchData = debounce(() => {
     return;
   }
   updateInfo('Fetching latest data...');
-  const q = `node[shop=farm](${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()});out;`;
+  const q = `[out:json];node[shop=farm](${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()});out body;>;out skel qt;`;
   const address =
     'https://maps.mail.ru/osm/tools/overpass/api/interpreter?data=' +
     encodeURIComponent(q);
   fetch(address)
-    // .then((r) => r.json())
-    .then((t) => t.text())
+    .then((r) => r.json())
+    // .then((t) => t.text())
     .then((j) => {
       updateInfo('Processing data...');
-      const parser = new DOMParser();
-      const xmlDoc = parser.parseFromString(j, 'text/xml');
       updateInfo('Updating markers');
-      xmlDoc.querySelectorAll('node').forEach((n) => {
+      j?.elements.forEach((n: MapData) => {
         const p: MapData = {
-          id: parseInt(n.id),
-          lat: n.getAttribute('lat') || 'ERROR',
-          lon: n.getAttribute('lon') || 'ERROR',
-          tags: {},
+          id: n.id,
+          lat: n.lat,
+          lon: n.lon,
+          tags: n.tags,
         };
-        n.querySelectorAll('tag').forEach((tag) => {
-          const key: string = tag.getAttribute('k') || 'ERROR';
-          const value: string = tag.getAttribute('v') || 'ERROR';
-          p.tags[key] = value;
-        });
         const pid: string = `id${p.id}`;
         if (!mapData[pid]) {
           mapData[pid] = p;
@@ -529,7 +523,7 @@ const formatPopup = (p: MapData): string => {
 
 const markerToMap = (p: MapData) => {
   const info = formatPopup(p);
-  const thisMarker = L.marker([parseFloat(p.lat), parseFloat(p.lon)], {
+  const thisMarker = L.marker([p.lat, p.lon], {
     icon: FFMM,
   }).bindPopup(info);
   markers.addLayer(thisMarker);
@@ -538,7 +532,7 @@ const markerToMap = (p: MapData) => {
 const bulkMarkersToMap = (arr: MapData[]) => {
   const markerArr = arr.map((p) => {
     const info = formatPopup(p);
-    const thisMarker = L.marker([parseFloat(p.lat), parseFloat(p.lon)], {
+    const thisMarker = L.marker([p.lat, p.lon], {
       icon: FFMM,
     }).bindPopup(info);
     return thisMarker;
