@@ -74,6 +74,20 @@ svg.leaflet-attribution-flag {
   color: #0078a8;
 }
 
+#addLocation {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  -webkit-transform: translateX(-50%);
+  transform: translateX(-50%);
+  z-index: 999;
+  background-color: var(--ffm-green);
+  color: var(--color-text);
+  padding: 10px;
+  border-radius: 10px;
+  display: none;
+}
+
 #settings {
   position: absolute;
   bottom: 40px;

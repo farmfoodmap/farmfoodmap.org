@@ -72,6 +72,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = /*html*/ `
           <path d="M128 173c-5 0-9-4-9-9V91a8 8 0 1 1 17 0v73c0 5-3 9-8 9z" />
         </g>
       </svg></span><br><a id="aboutLink">About</a><br><span id="statusText"></span></div>
+  <div id="addLocation">Add a new location to the map by clicking on its location</div>
   <div id="myModal" class="modal">
 
     <div class="modal-content">
@@ -383,11 +384,14 @@ const customControl = L.Control.extend({
       e.preventDefault();
       e.stopPropagation();
       const mapElement = document.getElementById('map');
+      const addLocation = document.getElementById('addLocation');
       if (typeof mapElement !== null) {
         if (isInAddMode) {
           mapElement!.style.cursor = 'pointer';
+          addLocation!.style.display = 'none';
         } else {
           mapElement!.style.cursor = 'crosshair';
+          addLocation!.style.display = 'block';
         }
       }
       isInAddMode = !isInAddMode;
@@ -679,6 +683,7 @@ document.querySelectorAll('.backToMap').forEach((b) => {
 map.addEventListener('click', (event: L.LeafletMouseEvent) => {
   if (isInAddMode) {
     document.getElementById('map')!.style.cursor = 'pointer';
+    document.getElementById('addLocation')!.style.display = 'none';
     isInAddMode = false;
     document.querySelectorAll('.pages').forEach((p) => {
       p.classList.add('hidden');
