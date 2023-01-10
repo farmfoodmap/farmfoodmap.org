@@ -22,6 +22,16 @@ declare global {
   }
 }
 
+declare namespace Intl {
+  class ListFormat {
+    constructor(
+      locales?: string | string[],
+      options?: { style: string; type: string }
+    );
+    public format: (items: string[]) => string;
+  }
+}
+
 const registerServiceWorker = async () => {
   if ('serviceWorker' in navigator) {
     try {
