@@ -8,16 +8,20 @@ console.log(
 try {
   const q = `[out:json];node[shop=farm](-90,-180,90,180);out body;>;out skel qt;`;
   const address =
-    'https://maps.mail.ru/osm/tools/overpass/api/interpreter?data=' +
-    encodeURIComponent(q);
-  const r = await fetch(address);
-  console.log('Response received. Now Processing...');
+    'https://maps.mail.ru/osm/tools/overpass/api/interpreter?data=';
+  const r = await fetch(address + encodeURIComponent(q));
   const j = await r.json();
+  const qM = `[out:json];node["amenity"="marketplace"]["shop"="market"](-90,-180,90,180);out body;>;out skel qt;`;
+  const rM = await fetch(address + encodeURIComponent(qM));
+  console.log('Response received. Now Processing...');
+  const jM = await rM.json();
+  const joined = { ...j, ...jM };
   const mapData = {};
   if (j.elements === undefined) {
-    console.log('j :>> ', j);
+    console.log('j :>> ', joined);
+    throw new Error('Unknown response from server');
   }
-  j.elements.forEach((n) => {
+  joined.elements.forEach((n) => {
     if (n.id && n.lat && n.lon && n.tags) {
       const p = {
         id: parseInt(n.id),
