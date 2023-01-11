@@ -479,7 +479,7 @@ const formatPopup = (p: MapData): string => {
     address = [];
   const shareData = {
     title: shopName,
-    text: '',
+    text: `Find ${shopName} on Farm Food Map. `,
     url: `https://farmfoodmap.org/?lat=${p.lat}&lng=${p.lon}&z=19`,
   };
   if (p?.tags['addr:floor']) address.push(p.tags['addr:floor'] + ' Floor');
@@ -556,15 +556,12 @@ const formatPopup = (p: MapData): string => {
         .map((item) => item.trim())
     )
   );
-  if (p.tags.description) shareData.text += `\n${p.tags.description}`;
-  if (p.tags.products) shareData.text += `\nSelling: ${p.tags.products}.`;
-  if (shareData.text.startsWith('\n')) {
-    shareData.text.replace('\n', '');
-  }
+  if (p.tags.description) shareData.text += `. ${p.tags.description}`;
+  if (p.tags.products) shareData.text += `. Selling: ${p.tags.products}.`;
   let info = `<h4>${shopName}</h4>
         ${
           address.length ? `<small>${address.join('<br>')}</small><br><br>` : ''
-        }
+        }${contact.join(' - ')}
         ${Object.keys(p.tags)
           .filter(
             (k) =>
@@ -638,7 +635,7 @@ window.sharePopup = async (button: HTMLElement, text: string) => {
       },
       () => {
         /* clipboard write failed */
-        console.error('Unable to copy or share');
+        alert('Unable to copy or share');
       }
     );
   }
