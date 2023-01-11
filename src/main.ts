@@ -558,10 +558,13 @@ const formatPopup = (p: MapData): string => {
   );
   if (p.tags.description) shareData.text += `. ${p.tags.description}`;
   if (p.tags.products) shareData.text += `. Selling: ${p.tags.products}.`;
+  shareData.text = shareData.text
+    .replaceAll("'", '\x27')
+    .replaceAll('"', '\x22');
   let info = `<h4>${shopName}</h4>
         ${
           address.length ? `<small>${address.join('<br>')}</small><br><br>` : ''
-        }<br>${contact.join(' - ')}<br>
+        }${contact.join(' - ')}<br>
         ${Object.keys(p.tags)
           .filter(
             (k) =>
@@ -595,8 +598,8 @@ const formatPopup = (p: MapData): string => {
           })
           .join('')}<br><button id="popupButton" onclick="editMap('${
     p.id
-  }')">Edit</button><button id="popupButton" onclick="sharePopup(this,'${encodeURI(
-    JSON.stringify(shareData)
+  }')">Edit</button><button id="popupButton" onclick="sharePopup(this,'${btoa(
+    encodeURIComponent(JSON.stringify(shareData))
   )}')">Share</button>`;
   return info;
 };
@@ -624,7 +627,7 @@ const bulkMarkersToMap = (arr: MapData[]) => {
 window.sharePopup = async (button: HTMLElement, text: string) => {
   let shareData: { title?: string; text?: string; url?: string } = {};
   try {
-    shareData = JSON.parse(decodeURI(text));
+    shareData = JSON.parse(decodeURIComponent(atob(text)));
     await navigator.share(shareData);
   } catch (_e) {
     const newClip = Object.values(shareData).join('\n');
