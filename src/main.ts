@@ -513,11 +513,11 @@ const formatPopup = (p: MapData): string => {
   }
   if (p?.tags['email']) {
     contact.push(
-      `<a href="mailto:${p.tags['email']}" target="_blank" rel="noopener noreferrer">${p.tags['email']}</a>`
+      `<a href="mailto:${p.tags['email']}" target="_blank" rel="noopener noreferrer">Email</a>`
     );
   } else if (p?.tags['contact:email']) {
     contact.push(
-      `<a href="mailto:${p.tags['contact:email']}" target="_blank" rel="noopener noreferrer">${p.tags['contact:email']}</a>`
+      `<a href="mailto:${p.tags['contact:email']}" target="_blank" rel="noopener noreferrer">Email</a>`
     );
   }
   if (p?.tags['phone']) {
@@ -561,7 +561,7 @@ const formatPopup = (p: MapData): string => {
   let info = `<h4>${shopName}</h4>
         ${
           address.length ? `<small>${address.join('<br>')}</small><br><br>` : ''
-        }${contact.join(' - ')}
+        }<br>${contact.join(' - ')}<br>
         ${Object.keys(p.tags)
           .filter(
             (k) =>
