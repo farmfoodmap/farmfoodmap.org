@@ -628,7 +628,7 @@ const formatPopup = (p: MapData): string => {
                 : '';
             })
             .join('') + '<br>'
-        }${contact.length ? contact.join(' - ') + '<br><br>' : ''}
+        }${contact.length ? contact.join(' - ') + '<br><br><br>' : ''}
           <div class="btn" onclick="editMap('${
             p.id
           }')">Edit</div><div class="btn" onclick="sharePopup(this,'${btoa(
