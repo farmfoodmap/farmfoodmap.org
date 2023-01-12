@@ -162,26 +162,6 @@ svg.leaflet-attribution-flag {
   width: 100%;
 }
 
-.backToMap,
-#editorLink {
-  display: block;
-  border: 1px solid var(--ffm-green);
-  color: var(--ffm-green);
-  background-color: var(--color-text);
-  cursor: pointer;
-  border-radius: 1em;
-  height: 40px;
-  margin-bottom: 5px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
-}
-
-.backToMap:hover {
-  background-color: var(--color-bg);
-}
-
 #aboutPage > article,
 #mapEditPage > article {
   margin: 5% auto;
@@ -208,10 +188,33 @@ svg.leaflet-attribution-flag {
   border-radius: 5px;
   border: 2px solid #a3a3a3;
 }
+.leaflet-popup-content {
+  min-width: 140px;
+}
 
-#popupButton {
+.btn {
+  display: inline-block;
+  padding: 0.3em 1.2em;
+  margin: 0 0.3em 0.3em 0;
+  border-radius: 2em;
+  box-sizing: border-box;
+  text-decoration: none;
+  font-family: 'Roboto', sans-serif;
+  font-weight: 900;
+  color: #ffffff;
   background-color: var(--ffm-green);
-  width: 50%;
+  text-align: center;
+  transition: all 0.2s;
+  border: 1px solid var(--ffm-green);
+}
+.btn:hover {
+  background-color: var(--color-bg);
+}
+@media all and (max-width: 30em) {
+  .btn {
+    display: block;
+    margin: 0.2em auto;
+  }
 }
 
 @media (prefers-color-scheme: light) {

@@ -109,7 +109,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = /*html*/ `
         /iPad|iPhone|iPod/.test(navigator.userAgent) ||
         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
           ? '<p>iOS Install Notes: If you are on an iPhone or iPad, tap the sharing button at the bottom of the screen. This calls up the sharing panel. Among the options should be the "Add to Home Screen" option</p>'
-          : '<button id="installButton">Install</button>'
+          : '<div id="installButton" class="btn">Install</div>'
       }
     </div>
 
@@ -117,7 +117,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = /*html*/ `
   <div id="map"></div>
 </section>
 <section id="aboutPage" class="pages hidden">
-  <span class="backToMap">
+  <span class="backToMap btn">
     Back to the map
   </span>
   <article>
@@ -135,10 +135,10 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = /*html*/ `
   </article>
 </section>
 <section id="mapEditPage" class="pages hidden">
-  <div class="backToMap">
+  <div class="backToMap btn">
     Back to the map
   </div>
-  <a href="" target="_blank" rel="noopener noreferrer" id="editorLink">I understand, take me to the editor!</a>
+  <a href="" target="_blank" rel="noopener noreferrer" id="editorLink" class="btn">I understand, take me to the editor!</a>
   <article>
     <h1>Editing the map</h1>
     <p>
@@ -621,11 +621,11 @@ const formatPopup = (p: MapData): string => {
               ? `<strong>${capitalize(key)}</strong>: ${value}<br>`
               : '';
           })
-          .join('')}<br><button id="popupButton" onclick="editMap('${
+          .join('')}<br><div class="btn" onclick="editMap('${
     p.id
-  }')">Edit</button><button id="popupButton" onclick="sharePopup(this,'${btoa(
+  }')">Edit</div><div class="btn" onclick="sharePopup(this,'${btoa(
     encodeURIComponent(JSON.stringify(shareData))
-  )}')">Share</button>`;
+  )}')">Share</div>`;
   return info;
 };
 
