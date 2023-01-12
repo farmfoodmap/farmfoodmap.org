@@ -210,12 +210,12 @@ svg.leaflet-attribution-flag {
 .btn:hover {
   background-color: var(--color-bg);
 }
-@media all and (max-width: 30em) {
+/* @media all and (max-width: 30em) {
   .btn {
     display: block;
     margin: 0.2em auto;
   }
-}
+} */
 
 @media (prefers-color-scheme: light) {
   :root {
