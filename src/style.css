@@ -209,6 +209,7 @@ svg.leaflet-attribution-flag {
 }
 .btn:hover {
   background-color: var(--color-bg);
+  color: var(--ffm-green);
 }
 /* @media all and (max-width: 30em) {
   .btn {
