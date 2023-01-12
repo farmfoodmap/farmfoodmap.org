@@ -199,19 +199,20 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = /*html*/ `
     <p>
       This group of tags describes which payment methods are available and are indicated with a <code>yes</code>,
       <code>no</code>, <code>only</code> or an <em>Interval</em> value (in the same format as <code>opening_hours</code> if,
-      for example, cards are only accepted during office hours). Furthermore, "payment:cash" set to "no" means
+      for example, cards are only accepted during office hours). Furthermore, <code>payment:cash</code> set to "no" means
       that you cannot pay with cash. These are a few very generic tags. If possible, they should be replaced by more
       specific ones which are listed in the
       <a href="https://wiki.openstreetmap.org/wiki/Key:payment:*" target="_blank" rel="noopener noreferrer">wiki</a>.
-      E.g. payment:cards=* is less specific than payment:credit_cards=* which in turn is less specific than e.g.
-      payment:mastercard=*. Many of these tags are especially useful to express that a whole group of payment options
+      E.g. <code>payment:cards=*</code> is less specific than <code>payment:credit_cards=*</code> which in turn is less specific than e.g.
+      <code>payment:mastercard=*</code>. Many of these tags are especially useful to express that a whole group of payment options
       is not
-      accepted, like payment:cards=no. <strong>NOTE:</strong> If a location accepts other currencies, like <a
+      accepted, like <code>payment:cards=no</code>. <strong>NOTE:</strong> If a location accepts other currencies, like <a
         href="https://bitcoin.org" target="_blank" rel="noopener noreferrer">Bitcoin</a>, please don't select it from
       the list in the form, as it is an outdated way of indicating this, rather use <code>currency:XBT</code> set to
       <code>yes</code>. There are tags for payment methods for Bitcoin and we ask that you use these if they apply:
       <code>payment:onchain</code> <code>payment:lightning</code> <code>payment:lightning_contactless</code>
     </p>
+    <p>Currently the map only displays cash and bitcoin.</p>
     <h2><code>organic</code></h2>
     <p>
       Do they sell organic products? Possible values are <code>yes</code>, <code>no</code> or <code>only</code>. <a
@@ -256,6 +257,10 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = /*html*/ `
       examples for <code>product</code> are things like
       <code>cider; beer; wine; olive oil; preserves; cream; butter; tallow; stock; sausages; biltong; jerky; leather goods;</code>.
       <strong>Note:</strong> This is only a distinction for OSM, both categories will be grouped together on Farm Food Map. See the <a href="https://wiki.openstreetmap.org/wiki/Key:produce" target="_blank" rel="noopener noreferrer">wiki</a> for more information.
+    </p>
+    <h2><code>wheelchair</code></h2>
+    <p>
+      This tag may be used to mark places or ways that are suitable to be used with a wheelchair and a person with a disability who uses another mobility device (like a walker). It should only be used if you are sure about it, this can either be because there's a special sign or because of personal experience/someone with a wheelchair told you. If you are unsure, give more information in <code>description=*</code>.  See the <a href="https://wiki.openstreetmap.org/wiki/Key:wheelchair" target="_blank" rel="noopener noreferrer">wiki</a> for more information.
     </p>
     <h2><code>description</code></h2>
     <p>
@@ -472,14 +477,17 @@ const fetchData = debounce(() => {
 }, 1000);
 
 const formatPopup = (p: MapData): string => {
-  // Name, address, freetext description, produce, website, contact, Bitcoin
+  const punctuate = (str: string) =>
+    str.endsWith('.') || str.endsWith('!') || str.endsWith('?')
+      ? `${str}.`
+      : str;
   const shopName = p?.tags.name || 'Unknown Name',
     sharing: string[] = [shopName],
     contact = [],
     address = [];
   const shareData = {
     title: shopName,
-    text: `Find ${shopName} on Farm Food Map. `,
+    text: `Find ${shopName} on Farm Food Map.`,
     url: `https://farmfoodmap.org/?lat=${p.lat}&lng=${p.lon}&z=19`,
   };
   if (p?.tags['addr:floor']) address.push(p.tags['addr:floor'] + ' Floor');
@@ -493,7 +501,7 @@ const formatPopup = (p: MapData): string => {
   if (p?.tags['addr:province']) address.push(p.tags['addr:province']);
   if (p?.tags['addr:postcode']) address.push(p.tags['addr:postcode']);
   if (p?.tags['addr:country']) address.push(p.tags['addr:country']);
-  shareData.text += address.join(', ');
+  if (address.length) shareData.text += punctuate(` ${address.join(', ')}`);
   // contact
   if (p?.tags['website']) {
     contact.push(
@@ -556,11 +564,22 @@ const formatPopup = (p: MapData): string => {
         .map((item) => item.trim())
     )
   );
-  if (p.tags.description) shareData.text += `. ${p.tags.description}`;
-  if (p.tags.products) shareData.text += `. Selling: ${p.tags.products}.`;
+  if (p.tags.description) shareData.text += punctuate(` ${p.tags.description}`);
+  if (p.tags.products)
+    shareData.text += punctuate(` Selling: ${p.tags.products}`);
   shareData.text = shareData.text
     .replaceAll("'", '\x27')
     .replaceAll('"', '\x22');
+  if (
+    (p.tags['currency:XBT'] && p.tags['currency:XBT'] !== 'no') ||
+    (p.tags['payment:bitcoin'] && p.tags['payment:bitcoin'] !== 'no') ||
+    (p.tags['payment:onchain'] && p.tags['payment:onchain'] !== 'no') ||
+    (p.tags['payment:lightning'] && p.tags['payment:lightning'] !== 'no') ||
+    (p.tags['payment:lightning_contactless'] &&
+      p.tags['payment:lightning_contactless'] !== 'no')
+  ) {
+    shareData.text += ` Bitcoin accepted here!`;
+  }
   let info = `<h4>${shopName}</h4>
         ${
           address.length ? `<small>${address.join('<br>')}</small><br><br>` : ''
@@ -568,10 +587,16 @@ const formatPopup = (p: MapData): string => {
         ${Object.keys(p.tags)
           .filter(
             (k) =>
-              k.startsWith('payment:') ||
+              k === 'payment:cash' ||
+              k === 'payment:bitcoin' ||
+              k === 'payment:onchain' ||
+              k === 'payment:lightning' ||
+              k === 'payment:lightning_contactless' ||
               k === 'organic' ||
               k === 'description' ||
-              k === 'currency:XBT'
+              k === 'currency:XBT' ||
+              k === 'wheelchair' ||
+              k === 'note'
           )
           .concat(['products'])
           .map((k) => {
@@ -583,8 +608,8 @@ const formatPopup = (p: MapData): string => {
                 k
                   .replace('_', ' ')
                   .replace(/^payment/, 'pay')
-                  .replace(':', ' with ')
                   .replace('currency:XBT', 'Bitcoin accepted')
+                  .replace(':', ' with ')
               ) || '';
             const value =
               joiner.format(
