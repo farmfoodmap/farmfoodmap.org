@@ -583,50 +583,55 @@ const formatPopup = (p: MapData): string => {
   let info = `<strong>${shopName}</strong><br>
         ${
           address.length ? `<small>${address.join('<br>')}</small><br>` : ''
-        }${contact.join(' - ')}<br>
+        }<br>
+        ${p.tags.products.length ? `Selling: ${p.tags.products}<br><br>` : ''}
         ${
           p.tags['description']
-            ? p.tags['description'] + '<br>'
+            ? p.tags['description'] + '<br><br>'
             : p.tags['note']
-            ? p.tags['note'] + '<br>'
+            ? p.tags['note'] + '<br><br>'
             : ''
         }
-        ${p.tags.products.length ? p.tags.products + '<br>' : ''}
-        ${Object.keys(p.tags)
-          .filter(
-            (k) =>
-              k === 'payment:cash' ||
-              k === 'payment:bitcoin' ||
-              k === 'payment:onchain' ||
-              k === 'payment:lightning' ||
-              k === 'payment:lightning_contactless' ||
-              k === 'organic' ||
-              k === 'currency:XBT' ||
-              k === 'wheelchair'
-          )
-          .map((k) => {
-            p.tags[k] = p.tags[k]
-              .replace(/^\byes\b$/, '✔')
-              .replace(/^\bno\b$/, '✘');
-            const key =
-              capitalize(
-                k
-                  .replace('_', ' ')
-                  .replace(/^payment/, 'pay')
-                  .replace('currency:XBT', 'Bitcoin accepted')
-                  .replace(':', ' with ')
-              ) || '';
-            const value =
-              joiner.format(
-                capitalize(p.tags[k])
-                  .split(';')
-                  .map((w) => w.trim())
-              ) || '';
-            return p.tags[k] ? `<em>${capitalize(key)}</em>: ${value}<br>` : '';
-          })
-          .join('')}<br><div class="btn" onclick="editMap('${
-    p.id
-  }')">Edit</div><div class="btn" onclick="sharePopup(this,'${btoa(
+        ${
+          Object.keys(p.tags)
+            .filter(
+              (k) =>
+                k === 'payment:cash' ||
+                k === 'payment:bitcoin' ||
+                k === 'payment:onchain' ||
+                k === 'payment:lightning' ||
+                k === 'payment:lightning_contactless' ||
+                k === 'organic' ||
+                k === 'currency:XBT' ||
+                k === 'wheelchair'
+            )
+            .map((k) => {
+              p.tags[k] = p.tags[k]
+                .replace(/^\byes\b$/, '✔')
+                .replace(/^\bno\b$/, '✘');
+              const key =
+                capitalize(
+                  k
+                    .replace('_', ' ')
+                    .replace(/^payment/, 'pay')
+                    .replace('currency:XBT', 'Bitcoin accepted')
+                    .replace(':', ' with ')
+                ) || '';
+              const value =
+                joiner.format(
+                  capitalize(p.tags[k])
+                    .split(';')
+                    .map((w) => w.trim())
+                ) || '';
+              return p.tags[k]
+                ? `<em>${capitalize(key)}</em>: ${value}<br>`
+                : '';
+            })
+            .join('') + '<br>'
+        }${contact.length ? contact.join(' - ') + '<br><br>' : ''}
+          <div class="btn" onclick="editMap('${
+            p.id
+          }')">Edit</div><div class="btn" onclick="sharePopup(this,'${btoa(
     encodeURIComponent(JSON.stringify(shareData))
   )}')">Share</div>`;
   return info;
@@ -640,34 +645,35 @@ const markerToMap = (p: MapData) => {
   markers.addLayer(thisMarker);
 };
 
-// const dummyMarker = {
-//   id: 9025131356767676,
-//   lat: 0,
-//   lon: 0,
-//   tags: {
-//     'addr:city': 'Null Island',
-//     'addr:country': 'Atlantic Ocean',
-//     'addr:housename': 'Null Farm',
-//     'addr:postcode': 'NU11 1SL',
-//     'addr:street': 'Null Road',
-//     description: "This is a dummy marker for testing, Don't try to visit it!",
-//     name: 'Null Island Market',
-//     opening_hours: 'Th 08:00-14:00',
-//     organic: 'yes',
-//     shop: 'farm',
-//     produce: 'apples;pairs',
-//     product: 'cider;perry',
-//     'payment:cash': 'no',
-//     'payment:lightning_contactless': 'no',
-//     'payment:lightning': 'yes',
-//     'payment:onchain': 'no',
-//     'currency:XBT': 'only',
-//     'contact:facebook': 'https://www.facebook.com/',
-//     phone: '+43 650 4949470',
-//     website: 'https://www.example.com/',
-//   },
-// };
-// markerToMap(dummyMarker);
+const dummyMarker = {
+  id: 9025131356767676,
+  lat: 0,
+  lon: 0,
+  tags: {
+    'addr:city': 'Null Island',
+    'addr:country': 'Atlantic Ocean',
+    'addr:housename': 'Null Farm',
+    'addr:postcode': 'NU11 1SL',
+    'addr:street': 'Null Road',
+    description: "This is a dummy marker for testing, Don't try to visit it!",
+    name: 'Null Island Market',
+    opening_hours: 'Th 08:00-14:00',
+    organic: 'yes',
+    shop: 'farm',
+    produce: 'apples;pairs',
+    product: 'cider;perry',
+    'payment:cash': 'no',
+    'payment:lightning_contactless': 'no',
+    'payment:lightning': 'yes',
+    'payment:onchain': 'no',
+    'currency:XBT': 'only',
+    'contact:facebook': 'https://www.facebook.com/',
+    phone: '+43 650 4949470',
+    website: 'https://www.example.com/',
+    wheelchair: 'no',
+  },
+};
+markerToMap(dummyMarker);
 
 const bulkMarkersToMap = (arr: MapData[]) => {
   const markerArr = arr.map((p) => {
