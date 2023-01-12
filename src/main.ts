@@ -580,10 +580,18 @@ const formatPopup = (p: MapData): string => {
   ) {
     shareData.text += ` Bitcoin accepted here!`;
   }
-  let info = `<h4>${shopName}</h4>
+  let info = `<strong>${shopName}</strong><br>
         ${
-          address.length ? `<small>${address.join('<br>')}</small><br><br>` : ''
+          address.length ? `<small>${address.join('<br>')}</small><br>` : ''
         }${contact.join(' - ')}<br>
+        ${
+          p.tags['description']
+            ? p.tags['description'] + '<br>'
+            : p.tags['note']
+            ? p.tags['note'] + '<br>'
+            : ''
+        }
+        ${p.tags.products.length ? p.tags.products + '<br>' : ''}
         ${Object.keys(p.tags)
           .filter(
             (k) =>
@@ -593,12 +601,9 @@ const formatPopup = (p: MapData): string => {
               k === 'payment:lightning' ||
               k === 'payment:lightning_contactless' ||
               k === 'organic' ||
-              k === 'description' ||
               k === 'currency:XBT' ||
-              k === 'wheelchair' ||
-              k === 'note'
+              k === 'wheelchair'
           )
-          .concat(['products'])
           .map((k) => {
             p.tags[k] = p.tags[k]
               .replace(/^\byes\b$/, '✔')
@@ -617,9 +622,7 @@ const formatPopup = (p: MapData): string => {
                   .split(';')
                   .map((w) => w.trim())
               ) || '';
-            return p.tags[k]
-              ? `<strong>${capitalize(key)}</strong>: ${value}<br>`
-              : '';
+            return p.tags[k] ? `<em>${capitalize(key)}</em>: ${value}<br>` : '';
           })
           .join('')}<br><div class="btn" onclick="editMap('${
     p.id
@@ -636,6 +639,35 @@ const markerToMap = (p: MapData) => {
   }).bindPopup(info);
   markers.addLayer(thisMarker);
 };
+
+// const dummyMarker = {
+//   id: 9025131356767676,
+//   lat: 0,
+//   lon: 0,
+//   tags: {
+//     'addr:city': 'Null Island',
+//     'addr:country': 'Atlantic Ocean',
+//     'addr:housename': 'Null Farm',
+//     'addr:postcode': 'NU11 1SL',
+//     'addr:street': 'Null Road',
+//     description: "This is a dummy marker for testing, Don't try to visit it!",
+//     name: 'Null Island Market',
+//     opening_hours: 'Th 08:00-14:00',
+//     organic: 'yes',
+//     shop: 'farm',
+//     produce: 'apples;pairs',
+//     product: 'cider;perry',
+//     'payment:cash': 'no',
+//     'payment:lightning_contactless': 'no',
+//     'payment:lightning': 'yes',
+//     'payment:onchain': 'no',
+//     'currency:XBT': 'only',
+//     'contact:facebook': 'https://www.facebook.com/',
+//     phone: '+43 650 4949470',
+//     website: 'https://www.example.com/',
+//   },
+// };
+// markerToMap(dummyMarker);
 
 const bulkMarkersToMap = (arr: MapData[]) => {
   const markerArr = arr.map((p) => {
