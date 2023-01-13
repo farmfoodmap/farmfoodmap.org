@@ -504,8 +504,8 @@ const fetchData = debounce(() => {
     return;
   }
   const currentBounds = bounds;
-  const alreadyGot = fetchedBounds.filter((b) => b.contains(currentBounds));
-  if (alreadyGot.length) {
+  if (fetchedBounds.find((b) => b.contains(currentBounds))) {
+    // the current bounds have already been searched for
     return;
   }
   updateInfo('Fetching latest data...');
