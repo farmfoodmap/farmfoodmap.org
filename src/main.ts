@@ -54,7 +54,7 @@ const registerServiceWorker = async () => {
 registerServiceWorker();
 
 // Save unnecessary searches
-let mostNorth: number, mostSouth: number, mostEast: number, mostWest: number;
+const fetchedBounds: L.LatLngBounds[] = [];
 
 const mapData: MapDataObject = {};
 /* Dummy marker for testing */
@@ -503,28 +503,13 @@ const fetchData = debounce(() => {
     updateInfo();
     return;
   }
-  if (mostEast === null) {
-    // First run
-    mostEast = bounds.getEast();
-    mostNorth = bounds.getNorth();
-    mostSouth = bounds.getSouth();
-    mostWest = bounds.getWest();
-  }
-  if (
-    mostEast > bounds.getEast() &&
-    mostNorth > bounds.getNorth() &&
-    mostSouth < bounds.getSouth() &&
-    mostWest < bounds.getWest()
-  ) {
-    // already got this, it is a zoom
+  const currentBounds = bounds;
+  const alreadyGot = fetchedBounds.filter((b) => b.contains(currentBounds));
+  if (alreadyGot.length) {
     return;
   }
-  mostEast = bounds.getEast();
-  mostNorth = bounds.getNorth();
-  mostSouth = bounds.getSouth();
-  mostWest = bounds.getWest();
   updateInfo('Fetching latest data...');
-  const q = `[out:json];node[shop=farm](${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()});out body;>;out skel qt;`;
+  const q = `[out:json];node[shop=farm](${currentBounds.getSouth()},${currentBounds.getWest()},${currentBounds.getNorth()},${currentBounds.getEast()});out body;>;out skel qt;`;
   const address =
     'https://maps.mail.ru/osm/tools/overpass/api/interpreter?data=' +
     encodeURIComponent(q);
@@ -547,6 +532,7 @@ const fetchData = debounce(() => {
       markers.clearLayers();
       bulkMarkersToMap(Object.values(mapData));
       updateInfo();
+      fetchedBounds.push(currentBounds);
     })
     .catch((e) => console.error('e :>> ', e));
 }, 1000);
