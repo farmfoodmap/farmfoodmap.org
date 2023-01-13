@@ -21,13 +21,58 @@ try {
     console.log('joined :>> ', joined);
     throw new Error('Unknown response from server');
   }
+  const allowed = [
+    'shop',
+    'amenity',
+    'name',
+    'addr:housename',
+    'addr:housenumber',
+    'addr:floor',
+    'addr:street',
+    'addr:suburb',
+    'addr:city',
+    'addr:state',
+    'addr:province',
+    'addr:postcode',
+    'addr:country',
+    'opening_hours',
+    'payment:cash',
+    'payment:bitcoin',
+    'currency:XBT',
+    'payment:onchain',
+    'payment:lightning',
+    'payment:lightning_contactless',
+    'organic',
+    'payment:onchain',
+    'phone',
+    'website',
+    'email',
+    'facebook',
+    'produce',
+    'product',
+    'wheelchair',
+    'contact:phone',
+    'contact:website',
+    'contact:email',
+    'contact:facebook',
+    'contact:twitter',
+    'contact:phone',
+    'url',
+    'description',
+    'note',
+  ];
   joined.forEach((n) => {
     if (n.id && n.lat && n.lon && n.tags) {
       const p = {
         id: parseInt(n.id),
         lat: n.lat,
         lon: n.lon,
-        tags: n.tags,
+        tags: Object.keys(n.tags)
+          .filter((key) => allowed.includes(key))
+          .reduce((obj, key) => {
+            obj[key] = n.tags[key];
+            return obj;
+          }, {}),
       };
       mapData[`id${p.id}`] = p;
     } else {

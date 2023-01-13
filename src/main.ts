@@ -709,7 +709,15 @@ const bulkMarkersToMap = (arr: MapData[]) => {
   markers.addLayers(markerArr);
   updateInfo();
 };
-window.markers = markers;
+Object.values(globalMapData).forEach((p: MapData) => {
+  const pid: string = `id${p.id}`;
+  if (Object.prototype.hasOwnProperty.call(globalMapData, pid)) {
+    if (!mapData[pid]) {
+      mapData[pid] = p;
+    }
+  }
+});
+bulkMarkersToMap(Object.values(mapData));
 
 window.sharePopup = async (button: HTMLElement, text: string) => {
   let shareData: { title?: string; text?: string; url?: string } = {};
@@ -735,17 +743,17 @@ setBounds();
 map.on('moveend', setBounds);
 map.on('zoomend', setBounds);
 
-window.setTimeout(() => {
-  Object.values(globalMapData).forEach((p: MapData) => {
-    const pid: string = `id${p.id}`;
-    if (Object.prototype.hasOwnProperty.call(globalMapData, pid)) {
-      if (!mapData[pid]) {
-        mapData[pid] = p;
-      }
-    }
-  });
-  bulkMarkersToMap(Object.values(mapData));
-}, 1000);
+// window.setTimeout(() => {
+//   Object.values(globalMapData).forEach((p: MapData) => {
+//     const pid: string = `id${p.id}`;
+//     if (Object.prototype.hasOwnProperty.call(globalMapData, pid)) {
+//       if (!mapData[pid]) {
+//         mapData[pid] = p;
+//       }
+//     }
+//   });
+//   bulkMarkersToMap(Object.values(mapData));
+// }, 1000);
 
 const modal = document.getElementById('myModal');
 const closeButton = document.getElementById('modalClose') as HTMLElement;
