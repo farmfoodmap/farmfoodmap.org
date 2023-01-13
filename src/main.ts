@@ -20,6 +20,7 @@ declare global {
   interface Window {
     editMap: Function;
     sharePopup: Function;
+    markers: L.MarkerClusterGroup;
   }
 }
 declare global {
@@ -52,21 +53,48 @@ const registerServiceWorker = async () => {
 
 registerServiceWorker();
 
+// Save unnecessary searches
+let mostNorth: number, mostSouth: number, mostEast: number, mostWest: number;
+
 const mapData: MapDataObject = {};
-const markers = L.markerClusterGroup();
-const FFMM = L.icon({
-  iconUrl: '/android-chrome-192x192.png',
-  iconRetinaUrl: '/android-chrome-192x192.png',
-  iconSize: [50, 50],
-  iconAnchor: [25, 50],
-  popupAnchor: [0, 0],
-});
-let bounds: LatLngBounds;
+/* Dummy marker for testing */
+// mapData['id-0'] = {
+//   id: 0,
+//   lat: 0,
+//   lon: 0,
+//   tags: {
+//     'addr:city': 'Null Island',
+//     'addr:country': 'Atlantic Ocean',
+//     'addr:housename': 'Null Farm',
+//     'addr:postcode': 'NU11 1SL',
+//     'addr:street': 'Null Road',
+//     description: "This is a dummy marker for testing, Don't try to visit it!",
+//     name: 'Null Island Market',
+//     opening_hours: 'Th 08:00-14:00',
+//     organic: 'yes',
+//     shop: 'farm',
+//     produce: 'apples;pairs',
+//     product: 'cider;perry',
+//     'payment:cash': 'no',
+//     'payment:lightning_contactless': 'no',
+//     'payment:lightning': 'yes',
+//     'payment:onchain': 'no',
+//     'currency:XBT': 'only',
+//     'contact:facebook': 'https://www.facebook.com/',
+//     phone: '+43 650 4949470',
+//     website: 'https://www.example.com/',
+//     wheelchair: 'no',
+//   },
+// };
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = /*html*/ `
 <section id="mapPage" class="pages">
   <div id="heading">
     <img src="/FFM_logo.png" />
+  </div>
+  <div id="progress-block">
+    <div>Updating Locations...</div>
+    <div id="progress"><div id="progress-bar"></div></div>
   </div>
   <div id="settings" class="custom-button" onclick="()=>{}"></div>
   <div id="infoBar" class="hidden" onclick="()=>{}"><a href="https://twitter.com/farmfoodmap" target="_blank" rel="noopener noreferrer" tooltip="Visit our Twitter"><svg xmlns="http://www.w3.org/2000/svg" class="svg-social"
@@ -276,6 +304,35 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = /*html*/ `
 </section>
 `;
 
+const progress = document.getElementById('progress-block');
+const progressBar = document.getElementById('progress-bar');
+
+function updateProgressBar(processed: number, total: number, elapsed: number) {
+  if (elapsed > 300) {
+    // if it takes more than a second to load, display the progress bar:
+    progress!.style.display = 'flex';
+    progressBar!.style.width = Math.round((processed / total) * 100) + '%';
+  }
+
+  if (processed === total) {
+    // all markers processed - hide the progress bar:
+    progress!.style.display = 'none';
+  }
+}
+
+const markers = L.markerClusterGroup({
+  chunkedLoading: true,
+  chunkProgress: updateProgressBar,
+});
+const FFMM = L.icon({
+  iconUrl: '/android-chrome-192x192.png',
+  iconRetinaUrl: '/android-chrome-192x192.png',
+  iconSize: [50, 50],
+  iconAnchor: [25, 50],
+  popupAnchor: [0, 0],
+});
+let bounds: LatLngBounds;
+
 const settings = document.getElementById('settings');
 const infoBar = document.getElementById('infoBar');
 settings?.addEventListener('mouseenter', () => {
@@ -446,6 +503,26 @@ const fetchData = debounce(() => {
     updateInfo();
     return;
   }
+  if (mostEast === null) {
+    // First run
+    mostEast = bounds.getEast();
+    mostNorth = bounds.getNorth();
+    mostSouth = bounds.getSouth();
+    mostWest = bounds.getWest();
+  }
+  if (
+    mostEast > bounds.getEast() &&
+    mostNorth > bounds.getNorth() &&
+    mostSouth < bounds.getSouth() &&
+    mostWest < bounds.getWest()
+  ) {
+    // already got this, it is a zoom
+    return;
+  }
+  mostEast = bounds.getEast();
+  mostNorth = bounds.getNorth();
+  mostSouth = bounds.getSouth();
+  mostWest = bounds.getWest();
   updateInfo('Fetching latest data...');
   const q = `[out:json];node[shop=farm](${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()});out body;>;out skel qt;`;
   const address =
@@ -465,12 +542,10 @@ const fetchData = debounce(() => {
           tags: n.tags,
         };
         const pid: string = `id${p.id}`;
-        if (!mapData[pid]) {
-          mapData[pid] = p;
-          markerToMap(p);
-        }
+        mapData[pid] = p;
       });
-
+      markers.clearLayers();
+      bulkMarkersToMap(Object.values(mapData));
       updateInfo();
     })
     .catch((e) => console.error('e :>> ', e));
@@ -637,44 +712,6 @@ const formatPopup = (p: MapData): string => {
   return info;
 };
 
-const markerToMap = (p: MapData) => {
-  const info = formatPopup(p);
-  const thisMarker = L.marker([p.lat, p.lon], {
-    icon: FFMM,
-  }).bindPopup(info);
-  markers.addLayer(thisMarker);
-};
-
-// const dummyMarker = {
-//   id: 9025131356767676,
-//   lat: 0,
-//   lon: 0,
-//   tags: {
-//     'addr:city': 'Null Island',
-//     'addr:country': 'Atlantic Ocean',
-//     'addr:housename': 'Null Farm',
-//     'addr:postcode': 'NU11 1SL',
-//     'addr:street': 'Null Road',
-//     description: "This is a dummy marker for testing, Don't try to visit it!",
-//     name: 'Null Island Market',
-//     opening_hours: 'Th 08:00-14:00',
-//     organic: 'yes',
-//     shop: 'farm',
-//     produce: 'apples;pairs',
-//     product: 'cider;perry',
-//     'payment:cash': 'no',
-//     'payment:lightning_contactless': 'no',
-//     'payment:lightning': 'yes',
-//     'payment:onchain': 'no',
-//     'currency:XBT': 'only',
-//     'contact:facebook': 'https://www.facebook.com/',
-//     phone: '+43 650 4949470',
-//     website: 'https://www.example.com/',
-//     wheelchair: 'no',
-//   },
-// };
-// markerToMap(dummyMarker);
-
 const bulkMarkersToMap = (arr: MapData[]) => {
   const markerArr = arr.map((p) => {
     const info = formatPopup(p);
@@ -686,6 +723,7 @@ const bulkMarkersToMap = (arr: MapData[]) => {
   markers.addLayers(markerArr);
   updateInfo();
 };
+window.markers = markers;
 
 window.sharePopup = async (button: HTMLElement, text: string) => {
   let shareData: { title?: string; text?: string; url?: string } = {};
