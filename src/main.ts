@@ -8,6 +8,7 @@ import { LatLngBounds } from 'leaflet';
 import { debounce } from './debounce';
 import { MapData, MapDataObject } from './MapTypes';
 import globalMapData from './globalData.json';
+
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
   readonly userChoice: Promise<{
@@ -91,10 +92,6 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = /*html*/ `
 <section id="mapPage" class="pages">
   <div id="heading">
     <img src="/FFM_logo.png" />
-  </div>
-  <div id="progress-block">
-    <div>Updating Locations...</div>
-    <div id="progress"><div id="progress-bar"></div></div>
   </div>
   <div id="settings" class="custom-button" onclick="()=>{}"></div>
   <div id="infoBar" class="hidden" onclick="()=>{}"><a href="https://twitter.com/farmfoodmap" target="_blank" rel="noopener noreferrer" tooltip="Visit our Twitter"><svg xmlns="http://www.w3.org/2000/svg" class="svg-social"
@@ -304,25 +301,8 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = /*html*/ `
 </section>
 `;
 
-const progress = document.getElementById('progress-block');
-const progressBar = document.getElementById('progress-bar');
-
-function updateProgressBar(processed: number, total: number, elapsed: number) {
-  if (elapsed > 300) {
-    // if it takes more than a second to load, display the progress bar:
-    progress!.style.display = 'flex';
-    progressBar!.style.width = Math.round((processed / total) * 100) + '%';
-  }
-
-  if (processed === total) {
-    // all markers processed - hide the progress bar:
-    progress!.style.display = 'none';
-  }
-}
-
 const markers = L.markerClusterGroup({
   chunkedLoading: true,
-  chunkProgress: updateProgressBar,
 });
 const FFMM = L.icon({
   iconUrl: '/android-chrome-192x192.png',
@@ -407,6 +387,7 @@ const moveMapToSavedPosition = () => {
   const z = parseInt(localStorage.zoom);
   map.setView(c, z);
 };
+bounds = map.getBounds();
 L.control.layers(baseLayers).addTo(map);
 
 try {
@@ -505,7 +486,6 @@ const fetchData = debounce(() => {
   }
   const currentBounds = bounds;
   if (fetchedBounds.find((b) => b.contains(currentBounds))) {
-    // the current bounds have already been searched for
     return;
   }
   updateInfo('Fetching latest data...');
@@ -515,29 +495,96 @@ const fetchData = debounce(() => {
     encodeURIComponent(q);
   fetch(address)
     .then((r) => r.json())
-    // .then((t) => t.text())
     .then((j) => {
-      updateInfo('Processing data...');
       updateInfo('Updating markers');
+      const currentMarkers = markers.getLayers();
+      const allowed = [
+        'shop',
+        'amenity',
+        'name',
+        'addr:housename',
+        'addr:housenumber',
+        'addr:floor',
+        'addr:street',
+        'addr:suburb',
+        'addr:city',
+        'addr:state',
+        'addr:province',
+        'addr:postcode',
+        'addr:country',
+        'opening_hours',
+        'payment:cash',
+        'payment:bitcoin',
+        'currency:XBT',
+        'payment:onchain',
+        'payment:lightning',
+        'payment:lightning_contactless',
+        'organic',
+        'payment:onchain',
+        'phone',
+        'website',
+        'email',
+        'facebook',
+        'produce',
+        'product',
+        'wheelchair',
+        'contact:phone',
+        'contact:website',
+        'contact:email',
+        'contact:facebook',
+        'contact:twitter',
+        'contact:phone',
+        'url',
+        'description',
+        'note',
+      ];
       j?.elements.forEach((n: MapData) => {
         const p: MapData = {
+          ll: L.latLng(n.lat, n.lon),
           id: n.id,
           lat: n.lat,
           lon: n.lon,
-          tags: n.tags,
+          tags: Object.keys(n.tags)
+            .filter((key) => allowed.includes(key))
+            .reduce((obj: { [key: string]: string }, key) => {
+              obj[key] = n.tags[key];
+              return obj;
+            }, {}),
         };
         const pid: string = `id${p.id}`;
-        mapData[pid] = p;
+        if (
+          !(mapData[pid] && JSON.stringify(mapData[pid]) === JSON.stringify(p))
+        ) {
+          // something has changed, update it
+          mapData[`id${p.id}`] = p;
+          const m = currentMarkers.find((item) => {
+            if (p.ll !== undefined) {
+              // Note to developers:
+              // If TS gives an error here add
+              // the following to node_modules/leaflet.markercluster/index.d.ts
+              // "getLayers(): Marker[];"
+              // in the MarkerClusterGroup Class definition.
+              // Marker cluster overrides this.
+              return item.getLatLng().equals(p.ll);
+            }
+            return false;
+          });
+          if (m) {
+            const thisMarker = L.marker([p.lat, p.lon], {
+              icon: FFMM,
+            }).bindPopup(formatPopup(p));
+            markers.removeLayer(m).addLayer(thisMarker);
+          }
+        }
       });
-      markers.clearLayers();
-      bulkMarkersToMap(Object.values(mapData));
       updateInfo();
       fetchedBounds.push(currentBounds);
     })
     .catch((e) => console.error('e :>> ', e));
 }, 1000);
 
-const formatPopup = (p: MapData): string => {
+const formatPopup = (place: MapData): string => {
+  const p = JSON.parse(JSON.stringify(place));
   const punctuate = (str: string) =>
     str.endsWith('.') || str.endsWith('!') || str.endsWith('?')
       ? `${str}.`
@@ -621,8 +668,8 @@ const formatPopup = (p: MapData): string => {
       (p.tags.produce || '')
         .split(';')
         .concat((p.tags.product || '').split(';'))
-        .filter((item) => !!item)
-        .map((item) => item.trim())
+        .filter((item: string) => !!item)
+        .map((item: string) => item.trim())
     )
   );
   if (p.tags.description) shareData.text += punctuate(` ${p.tags.description}`);
@@ -698,7 +745,8 @@ const formatPopup = (p: MapData): string => {
   return info;
 };
 
-const bulkMarkersToMap = (arr: MapData[]) => {
+const bulkMarkersToMap = (arr = Object.values(mapData)) => {
+  markers.clearLayers();
   const markerArr = arr.map((p) => {
     const info = formatPopup(p);
     const thisMarker = L.marker([p.lat, p.lon], {
@@ -711,13 +759,17 @@ const bulkMarkersToMap = (arr: MapData[]) => {
 };
 Object.values(globalMapData).forEach((p: MapData) => {
   const pid: string = `id${p.id}`;
+  const place = {
+    ll: L.latLng(p.lat, p.lon),
+    ...p,
+  };
   if (Object.prototype.hasOwnProperty.call(globalMapData, pid)) {
     if (!mapData[pid]) {
-      mapData[pid] = p;
+      mapData[pid] = place;
     }
   }
 });
-bulkMarkersToMap(Object.values(mapData));
+bulkMarkersToMap();
 
 window.sharePopup = async (button: HTMLElement, text: string) => {
   let shareData: { title?: string; text?: string; url?: string } = {};
@@ -742,18 +794,6 @@ window.sharePopup = async (button: HTMLElement, text: string) => {
 setBounds();
 map.on('moveend', setBounds);
 map.on('zoomend', setBounds);
-
-// window.setTimeout(() => {
-//   Object.values(globalMapData).forEach((p: MapData) => {
-//     const pid: string = `id${p.id}`;
-//     if (Object.prototype.hasOwnProperty.call(globalMapData, pid)) {
-//       if (!mapData[pid]) {
-//         mapData[pid] = p;
-//       }
-//     }
-//   });
-//   bulkMarkersToMap(Object.values(mapData));
-// }, 1000);
 
 const modal = document.getElementById('myModal');
 const closeButton = document.getElementById('modalClose') as HTMLElement;

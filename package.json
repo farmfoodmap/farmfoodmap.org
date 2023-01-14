@@ -11,7 +11,7 @@
     "git": "npm run fetch && npm run build && git pull && git add . && git commit -m \"$MSG\" && git push"
   },
   "devDependencies": {
-    "@types/intl": "^1.2.0",
+    "@types/intl": "1.2.0",
     "@types/leaflet": "1.9.0",
     "@types/leaflet.markercluster": "1.5.1",
     "node-fetch": "3.3.0",

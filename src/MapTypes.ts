@@ -1,4 +1,5 @@
 export interface MapData {
+  ll?: L.LatLng;
   id: number;
   lat: number;
   lon: number;
