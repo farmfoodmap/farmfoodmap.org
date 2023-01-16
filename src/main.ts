@@ -559,21 +559,22 @@ const fetchData = debounce(() => {
           mapData[`id${p.id}`] = p;
           const m = currentMarkers.find((item) => {
             if (p.ll !== undefined) {
-              // Note to developers:
-              // If TS gives an error here add
-              // the following to node_modules/leaflet.markercluster/index.d.ts
-              // "getLayers(): Marker[];"
-              // in the MarkerClusterGroup Class definition.
-              // Marker cluster overrides this.
               return item.getLatLng().equals(p.ll);
             }
             return false;
           });
           if (m) {
+            // update the current marker
             const thisMarker = L.marker([p.lat, p.lon], {
               icon: FFMM,
             }).bindPopup(formatPopup(p));
             markers.removeLayer(m).addLayer(thisMarker);
+          } else {
+            // new location, add to the map
+            const thisMarker = L.marker([p.lat, p.lon], {
+              icon: FFMM,
+            }).bindPopup(formatPopup(p));
+            markers.addLayer(thisMarker);
           }
         }
       });
