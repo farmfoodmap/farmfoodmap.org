@@ -111,7 +111,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = /*html*/ `
           <path d="m128 173-6-3-28-28a8 8 0 1 1 12-12l22 22 22-22a8 8 0 1 1 12 12l-28 28-6 3z" />
           <path d="M128 173c-5 0-9-4-9-9V91a8 8 0 1 1 17 0v73c0 5-3 9-8 9z" />
         </g>
-      </svg></span><br><a id="aboutLink">About</a><br><span id="statusText"></span></div>
+      </svg></span><br><a id="aboutLink" class="btn">ABOUT</a><br><span id="statusText"></span></div>
   <div id="addLocation">Add a new location to the map by clicking on its location</div>
   <div id="myModal" class="modal">
 

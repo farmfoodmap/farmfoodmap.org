@@ -65,14 +65,15 @@ svg.leaflet-attribution-flag {
   left: 20px;
   font-size: x-small;
   color: var(--ffm-green);
-  background-color: #ffffffaa;
+  background-color: #ffffff;
   border: 1px solid var(--ffm-green);
   cursor: pointer;
+  width: 150px;
 }
 
-#infoBar a {
-  color: #0078a8;
-}
+/* #infoBar a {
+  color: var(--ffm-green);
+} */
 
 #addLocation {
   position: absolute;
