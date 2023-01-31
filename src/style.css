@@ -188,9 +188,62 @@ svg.leaflet-attribution-flag {
   cursor: pointer;
   border-radius: 5px;
   border: 2px solid #a3a3a3;
+  display: block;
+  margin-top: 10px;
 }
 .leaflet-popup-content {
   min-width: 140px;
+}
+
+#searchContainer {
+  position: absolute;
+  top: 10px;
+  left: 81px;
+  z-index: 99999;
+  background-color: #fff;
+  padding: 10px;
+  border-radius: 10px;
+  max-height: 50vh;
+  overflow-y: auto;
+  width: 200px;
+}
+
+#searchBox {
+  border: 1px solid #ccc;
+  -webkit-box-shadow: 0 1px 1px #ddd inset, 0 1px 0 #fff;
+  -moz-box-shadow: 0 1px 1px #ddd inset, 0 1px 0 #fff;
+  box-shadow: 0 1px 1px #ddd inset, 0 1px 0 #fff;
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 3px;
+  color: #999;
+  padding: 5px;
+  background-color: #fff;
+}
+
+#searchBox:focus {
+  border-color: #aaa;
+  -webkit-box-shadow: 0 1px 1px #bbb inset;
+  -moz-box-shadow: 0 1px 1px #bbb inset;
+  box-shadow: 0 1px 1px #bbb inset;
+  outline: 0;
+}
+
+#searchBox:-moz-placeholder,
+#searchBox:-ms-input-placeholder,
+#searchBox::-webkit-input-placeholder {
+  color: #999;
+  font-weight: normal;
+}
+
+.searchResult {
+  color: #242424;
+  font-size: smaller;
+  border: 1px solid #eee;
+  border-radius: 5px;
+  margin-top: 10px;
+  box-shadow: 0 2px 2px #bbb;
+  cursor: pointer;
 }
 
 .btn {

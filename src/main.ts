@@ -93,6 +93,10 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = /*html*/ `
   <div id="heading">
     <img src="/FFM_logo.png" />
   </div>
+  <div id="searchContainer" class="hidden">
+    <input type="text" placeholder="Search.." id="searchBox">
+    <div id="searchResults"></div>
+  </div>
   <div id="settings" class="custom-button" onclick="()=>{}"></div>
   <div id="infoBar" class="hidden" onclick="()=>{}"><a href="https://twitter.com/farmfoodmap" target="_blank" rel="noopener noreferrer" tooltip="Visit our Twitter"><svg xmlns="http://www.w3.org/2000/svg" class="svg-social"
         id="svg-icon-twitter" viewBox="0 0 512 512">
@@ -301,6 +305,71 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = /*html*/ `
 </section>
 `;
 
+let bounds: LatLngBounds;
+
+const searchBox = document.getElementById('searchBox') as HTMLInputElement;
+searchBox!.addEventListener('input', () => {
+  const text = searchBox!.value;
+  const resultsDiv = document.getElementById('searchResults') as HTMLDivElement;
+  resultsDiv.innerHTML = '';
+  if (text.length < 4) return;
+  let results: MapData[] = [];
+  Object.values(mapData).map((shop) => {
+    // first add ones that have matching names
+    if (shop.tags.name?.includes(text)) results.push(shop);
+  });
+  Object.values(mapData).map((shop) => {
+    // next add any address matches
+    for (const tag in shop.tags) {
+      if (Object.prototype.hasOwnProperty.call(shop.tags, tag)) {
+        const tagValue = shop.tags[tag];
+        if (tag.startsWith('addr') && tagValue.includes(text)) {
+          results.push(shop);
+          break;
+        }
+      }
+    }
+  });
+  Object.values(mapData).map((shop) => {
+    // next add any remaining matches
+    for (const tag in shop.tags) {
+      if (Object.prototype.hasOwnProperty.call(shop.tags, tag)) {
+        const tagValue = shop.tags[tag];
+        if (
+          !tag.startsWith('addr') &&
+          tag !== 'name' &&
+          tagValue.includes(text)
+        ) {
+          results.push(shop);
+          break;
+        }
+      }
+    }
+  });
+  // Put the visible ones first
+  if (bounds) {
+    const inBounds = results.filter((shop) =>
+      bounds.contains({ lat: shop.lat, lng: shop.lon })
+    );
+    const outBounds = results.filter(
+      (shop) => !bounds.contains({ lat: shop.lat, lng: shop.lon })
+    );
+    results = [...inBounds, ...outBounds];
+  }
+  results.forEach((shop) => {
+    const resultDiv = document.createElement('div');
+    resultDiv.className = 'searchResult';
+    const address = makeAddressArray(shop);
+    resultDiv.innerHTML = `<strong>${
+      shop.tags.name || 'Unknown Name'
+    }</strong><br><small>${
+      address.length ? `${address.join(', ')}` : 'Unknown Address'
+    }</small>`;
+    resultDiv.onclick = () => map.setView({ lat: shop.lat, lng: shop.lon }, 19);
+    resultsDiv.appendChild(resultDiv);
+  });
+});
+
 const markers = L.markerClusterGroup({
   chunkedLoading: true,
 });
@@ -311,7 +380,6 @@ const FFMM = L.icon({
   iconAnchor: [25, 50],
   popupAnchor: [0, 0],
 });
-let bounds: LatLngBounds;
 
 const settings = document.getElementById('settings');
 const infoBar = document.getElementById('infoBar');
@@ -453,6 +521,66 @@ const customControl = L.Control.extend({
       isInAddMode = !isInAddMode;
     };
     addControlDiv.append(newLocationButton);
+
+    const geoLocationButton = L.DomUtil.create('input');
+    geoLocationButton.type = 'button';
+    geoLocationButton.title = 'Move the map to my location.';
+    geoLocationButton.className =
+      'leaflet-bar-part leaflet-bar-part-single custom-button';
+    geoLocationButton.style.background = `url(/icons/locate.svg) center no-repeat, #fff`;
+
+    geoLocationButton.onmouseover = function () {
+      geoLocationButton.style.background = `url(/icons/locate-black.svg) center no-repeat, #fff`;
+    };
+    geoLocationButton.onmouseout = function () {
+      geoLocationButton.style.background = `url(/icons/locate.svg) center no-repeat, #fff`;
+    };
+
+    geoLocationButton.onclick = function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      // Geo locate
+      if (!navigator.geolocation) {
+        alert('Geolocation is not supported by your browser');
+      } else {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const c = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            };
+            const z = parseInt(localStorage.zoom);
+            map.setView(c, z);
+          },
+          () => {
+            alert('Unable to retrieve your location');
+          }
+        );
+      }
+    };
+    addControlDiv.append(geoLocationButton);
+
+    const searchButton = L.DomUtil.create('input');
+    searchButton.type = 'button';
+    searchButton.title = 'Search for a location.';
+    searchButton.className =
+      'leaflet-bar-part leaflet-bar-part-single custom-button';
+    searchButton.style.background = `url(/icons/search.svg) center no-repeat, #fff`;
+
+    searchButton.onmouseover = function () {
+      searchButton.style.background = `url(/icons/search-black.svg) center no-repeat, #fff`;
+    };
+    searchButton.onmouseout = function () {
+      searchButton.style.background = `url(/icons/search.svg) center no-repeat, #fff`;
+    };
+
+    searchButton.onclick = function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      document.getElementById('searchContainer')?.classList.toggle('hidden');
+    };
+    addControlDiv.append(searchButton);
+
     return addControlDiv;
   },
 });
@@ -584,21 +712,8 @@ const fetchData = debounce(() => {
     .catch((e) => console.error('e :>> ', e));
 }, 1000);
 
-const formatPopup = (place: MapData): string => {
-  const p = JSON.parse(JSON.stringify(place));
-  const punctuate = (str: string) =>
-    str.endsWith('.') || str.endsWith('!') || str.endsWith('?')
-      ? `${str}.`
-      : str;
-  const shopName = p?.tags.name || 'Unknown Name',
-    sharing: string[] = [shopName],
-    contact = [],
-    address = [];
-  const shareData = {
-    title: shopName,
-    text: `Find ${shopName} on Farm Food Map.`,
-    url: `https://farmfoodmap.org/?lat=${p.lat}&lng=${p.lon}&z=19`,
-  };
+const makeAddressArray = (p: MapData) => {
+  const address = [];
   if (p?.tags['addr:floor']) address.push(p.tags['addr:floor'] + ' Floor');
   if (p?.tags['addr:housename']) address.push(p.tags['addr:housename']);
   if (p?.tags['addr:housenumber'] && p?.tags['addr:street'])
@@ -610,6 +725,24 @@ const formatPopup = (place: MapData): string => {
   if (p?.tags['addr:province']) address.push(p.tags['addr:province']);
   if (p?.tags['addr:postcode']) address.push(p.tags['addr:postcode']);
   if (p?.tags['addr:country']) address.push(p.tags['addr:country']);
+  return address;
+};
+
+const formatPopup = (place: MapData): string => {
+  const p = JSON.parse(JSON.stringify(place));
+  const punctuate = (str: string) =>
+    str.endsWith('.') || str.endsWith('!') || str.endsWith('?')
+      ? `${str}.`
+      : str;
+  const shopName = p?.tags.name || 'Unknown Name',
+    sharing: string[] = [shopName],
+    contact = [],
+    address = makeAddressArray(p);
+  const shareData = {
+    title: shopName,
+    text: `Find ${shopName} on Farm Food Map.`,
+    url: `https://farmfoodmap.org/?lat=${p.lat}&lng=${p.lon}&z=19`,
+  };
   if (address.length) shareData.text += punctuate(` ${address.join(', ')}`);
   // contact
   if (p?.tags['website']) {
