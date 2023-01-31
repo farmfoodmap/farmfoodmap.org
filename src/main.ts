@@ -545,12 +545,13 @@ const customControl = L.Control.extend({
       } else {
         navigator.geolocation.getCurrentPosition(
           (position) => {
-            const c = {
-              lat: position.coords.latitude,
-              lng: position.coords.longitude,
-            };
-            const z = parseInt(localStorage.zoom);
-            map.setView(c, z);
+            map.setView(
+              {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude,
+              },
+              18
+            );
           },
           () => {
             alert('Unable to retrieve your location');
